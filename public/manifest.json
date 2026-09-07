@@ -1,0 +1,19 @@
+{
+  "id": "/",
+  "name": "コーヒーレシピノート",
+  "short_name": "珈琲ノート",
+  "description": "Android対応のコーヒー抽出レシピ記録アプリ。豆情報、注湯ステップ、エイジング経過日数、スプレッドシートインポート、★5フィルター、お気に入り機能に対応。",
+  "theme_color": "#78350f",
+  "background_color": "#fefce8",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
