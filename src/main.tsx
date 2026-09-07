@@ -1,13 +1,33 @@
-import {StrictMode} from 'react';
-import {createRoot} from 'react-dom/client';
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
-import {ErrorBoundary} from './components/ErrorBoundary.tsx';
+import { ErrorBoundary } from './components/ErrorBoundary.tsx';
 import './index.css';
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
-  </StrictMode>,
-);
+const rootElement = document.getElementById('root');
+
+if (!rootElement) {
+  throw new Error('Failed to find root element');
+}
+
+try {
+  const root = createRoot(rootElement);
+  root.render(
+    <StrictMode>
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
+    </StrictMode>
+  );
+} catch (err) {
+  console.error('[CoffeeNote] Render error:', err);
+  rootElement.innerHTML = `
+    <div style="font-family: sans-serif; padding: 24px; text-align: center; background: #fefce8; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+      <div style="font-size: 36px; margin-bottom: 12px;">☕</div>
+      <h2 style="font-size: 18px; color: #78350f; font-weight: bold; margin-bottom: 8px;">アプリの起動エラー</h2>
+      <p style="font-size: 13px; color: #78716c; margin-bottom: 16px;">ブラウザの古いキャッシュをリセットしてください</p>
+      <pre style="font-size: 11px; background: #fff; padding: 12px; border-radius: 8px; border: 1px solid #fed7aa; max-width: 90%; overflow: auto; text-align: left; margin-bottom: 16px;">${err instanceof Error ? err.stack || err.message : String(err)}</pre>
+      <button onclick="localStorage.clear(); location.reload(true);" style="background: #d97706; color: #fff; border: none; padding: 10px 24px; border-radius: 12px; font-weight: bold; cursor: pointer;">キャッシュをクリアして再起動</button>
+    </div>
+  `;
+}
