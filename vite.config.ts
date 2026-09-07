@@ -2,38 +2,12 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
-import {VitePWA} from 'vite-plugin-pwa';
 
 export default defineConfig(() => {
   return {
     plugins: [
       react(),
       tailwindcss(),
-      VitePWA({
-        registerType: 'autoUpdate',
-        manifest: {
-          id: '/',
-          name: 'コーヒーレシピノート',
-          short_name: '珈琲ノート',
-          description: 'Android対応のコーヒー抽出レシピ記録アプリ',
-          theme_color: '#78350f',
-          background_color: '#fefce8',
-          display: 'standalone',
-          start_url: '/',
-          scope: '/',
-          icons: [
-            {
-              src: '/icon.svg',
-              sizes: '192x192 512x512',
-              type: 'image/svg+xml',
-              purpose: 'any',
-            },
-          ],
-        },
-        devOptions: {
-          enabled: false,
-        },
-      }),
     ],
     resolve: {
       alias: {

@@ -146,13 +146,13 @@ export default function App() {
     // 4. Sort
     list.sort((a, b) => {
       if (sortOrder === 'brewDateDesc') {
-        return (b.brewDate || '').localeCompare(a.brewDate || '') || b.createdAt - a.createdAt;
+        return (b.brewDate || '').localeCompare(a.brewDate || '') || (b.createdAt || 0) - (a.createdAt || 0);
       }
       if (sortOrder === 'brewDateAsc') {
-        return (a.brewDate || '').localeCompare(b.brewDate || '') || a.createdAt - b.createdAt;
+        return (a.brewDate || '').localeCompare(b.brewDate || '') || (a.createdAt || 0) - (b.createdAt || 0);
       }
       if (sortOrder === 'ratingDesc') {
-        return b.rating - a.rating || (b.brewDate || '').localeCompare(a.brewDate || '');
+        return (b.rating || 0) - (a.rating || 0) || (b.brewDate || '').localeCompare(a.brewDate || '');
       }
       if (sortOrder === 'agingDaysDesc') {
         const agingA = calculateAgingDays(a.roastDate, a.brewDate) ?? -999;

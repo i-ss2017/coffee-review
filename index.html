@@ -16,10 +16,44 @@
     <meta name="apple-mobile-web-app-title" content="珈琲ノート" />
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <link rel="manifest" href="/manifest.json" />
+
+    <script>
+      // 過去にChromeで登録された不整合なServiceWorkerを自動解除して画面真っ白を防ぐ
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for (var i = 0; i < registrations.length; i++) {
+            var reg = registrations[i];
+            // vite-plugin-pwaなどの古いServiceWorkerを解除
+            if (reg.active && (reg.active.scriptURL.indexOf('pwa') !== -1 || reg.active.scriptURL.indexOf('dev-sw') !== -1)) {
+              reg.unregister();
+            }
+          }
+        }).catch(function(e) { console.warn(e); });
+      }
+
+      // 万が一のスクリプト実行時エラーを捕捉して画面に表示
+      window.addEventListener('error', function(e) {
+        var root = document.getElementById('root');
+        if (root && (!root.children || root.children.length === 0 || root.querySelector('.initial-loader'))) {
+          root.innerHTML = '<div style="font-family:sans-serif;padding:24px;text-align:center;background:#fffbeb;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;">' +
+            '<div style="font-size:36px;margin-bottom:12px;">☕</div>' +
+            '<h2 style="font-size:18px;color:#78350f;margin-bottom:8px;">読み込みエラーが発生しました</h2>' +
+            '<p style="font-size:13px;color:#78716c;margin-bottom:16px;">ブラウザのキャッシュをクリアして再読み込みしてください</p>' +
+            '<button onclick="localStorage.clear();location.reload(true);" style="background:#d97706;color:#fff;border:none;padding:10px 20px;border-radius:12px;font-weight:bold;cursor:pointer;">キャッシュをクリアして再読み込み</button>' +
+            '</div>';
+        }
+      });
+    </script>
   </head>
   <body class="bg-amber-50/40 text-stone-800 antialiased selection:bg-amber-200">
-    <div id="root"></div>
+    <div id="root">
+      <!-- 初回マウント前の初期ローディング表示（真っ白画面の防止） -->
+      <div class="initial-loader" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background-color:#fefce8;color:#78350f;font-family:system-ui,-apple-system,sans-serif;">
+        <div style="font-size:40px;margin-bottom:12px;animation:pulse 1.5s infinite;">☕</div>
+        <div style="font-weight:700;font-size:16px;letter-spacing:0.05em;">コーヒーレシピノート</div>
+        <div style="font-size:12px;color:#a16207;margin-top:4px;">アプリを読み込み中...</div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-

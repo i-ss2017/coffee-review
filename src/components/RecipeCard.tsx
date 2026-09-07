@@ -22,6 +22,11 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   const agingDays = calculateAgingDays(recipe.roastDate, recipe.brewDate);
   const agingBadge = getAgingBadgeInfo(agingDays);
 
+  const taste = recipe.taste || { acidity: 0, sweetness: 0, bitterness: 0 };
+  const pours = Array.isArray(recipe.pours) ? recipe.pours : [];
+  const rating = typeof recipe.rating === 'number' ? recipe.rating : 0;
+  const isV60 = typeof recipe.dripper === 'string' && recipe.dripper.includes('V60');
+
   return (
     <div
       id={`recipe-card-${recipe.id}`}
@@ -91,7 +96,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
                 <Star
                   key={s}
                   className={`w-4 h-4 ${
-                    s <= recipe.rating ? 'fill-amber-400 text-amber-400' : 'text-stone-200'
+                    s <= rating ? 'fill-amber-400 text-amber-400' : 'text-stone-200'
                   }`}
                 />
               ))}
@@ -103,11 +108,11 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
         <div className="mt-2 flex items-center gap-3 text-xs text-stone-500">
           <span className="flex items-center gap-1">
             <Calendar className="w-3.5 h-3.5 text-stone-400" />
-            抽出: {formatJapaneseDate(recipe.brewDate)}
+            抽出: {formatJapaneseDate(recipe.brewDate || '')}
           </span>
           {recipe.roastDate && (
             <span className="text-[11px] text-stone-400">
-              (焙煎: {formatJapaneseDate(recipe.roastDate)})
+              (焙煎: {formatJapaneseDate(recipe.roastDate || '')})
             </span>
           )}
         </div>
@@ -120,7 +125,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
           <span className="text-[10px] text-stone-400 font-medium">ドリッパー</span>
           <span
             className={`font-semibold truncate ${
-              recipe.dripper.includes('V60') ? 'text-amber-900' : 'text-stone-800'
+              isV60 ? 'text-amber-900' : 'text-stone-800'
             }`}
           >
             {recipe.dripper || '—'}
@@ -131,20 +136,20 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
         <div className="flex flex-col">
           <span className="text-[10px] text-stone-400 font-medium">粉量 / クリック</span>
           <span className="font-semibold text-stone-800">
-            {recipe.coffeeAmount}g / {recipe.clicks || '—'}
+            {recipe.coffeeAmount || 0}g / {recipe.clicks || '—'}
           </span>
         </div>
 
         {/* Total Water */}
         <div className="flex flex-col">
           <span className="text-[10px] text-stone-400 font-medium">合計湯量</span>
-          <span className="font-semibold text-stone-800">{recipe.totalWater}g</span>
+          <span className="font-semibold text-stone-800">{recipe.totalWater || 0}g</span>
         </div>
 
         {/* Temp */}
         <div className="flex flex-col">
           <span className="text-[10px] text-stone-400 font-medium">湯温</span>
-          <span className="font-semibold text-stone-800">{recipe.waterTemp}℃</span>
+          <span className="font-semibold text-stone-800">{recipe.waterTemp || '—'}℃</span>
         </div>
 
         {/* Ratio */}
@@ -170,7 +175,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
             <Droplet className="w-3.5 h-3.5 text-amber-600" />
             <span>注湯ステップ (1〜5投目)</span>
             <span className="text-[11px] text-stone-400">
-              合計 {recipe.pours.reduce((sum, p) => sum + (p.water || 0), 0)}g
+              合計 {pours.reduce((sum, p) => sum + (p.water || 0), 0)}g
             </span>
           </span>
           {showPours ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -178,7 +183,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
 
         {/* Pour Step Chips */}
         <div className="mt-1.5 grid grid-cols-5 gap-1 text-[11px]">
-          {recipe.pours.map((step, idx) => (
+          {pours.map((step, idx) => (
             <div
               key={idx}
               className={`p-1.5 rounded-lg border text-center ${
@@ -188,7 +193,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
               }`}
             >
               <div className="font-semibold text-[10px] text-stone-500">{idx + 1}投目</div>
-              <div className="font-bold text-xs">{step.water}g</div>
+              <div className="font-bold text-xs">{step.water || 0}g</div>
               <div className="text-[10px] text-stone-500">{step.time || '—'}</div>
             </div>
           ))}
@@ -207,7 +212,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
                 <div
                   key={lvl}
                   className={`w-2.5 h-2.5 rounded-full ${
-                    lvl <= recipe.taste.acidity ? 'bg-amber-500' : 'bg-stone-200'
+                    lvl <= (taste.acidity || 0) ? 'bg-amber-500' : 'bg-stone-200'
                   }`}
                 />
               ))}
@@ -222,7 +227,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
                 <div
                   key={lvl}
                   className={`w-2.5 h-2.5 rounded-full ${
-                    lvl <= recipe.taste.sweetness ? 'bg-orange-500' : 'bg-stone-200'
+                    lvl <= (taste.sweetness || 0) ? 'bg-orange-500' : 'bg-stone-200'
                   }`}
                 />
               ))}
@@ -237,7 +242,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
                 <div
                   key={lvl}
                   className={`w-2.5 h-2.5 rounded-full ${
-                    lvl <= recipe.taste.bitterness ? 'bg-stone-700' : 'bg-stone-200'
+                    lvl <= (taste.bitterness || 0) ? 'bg-stone-700' : 'bg-stone-200'
                   }`}
                 />
               ))}
