@@ -18,65 +18,59 @@
     <link rel="manifest" href="/manifest.json" />
 
     <script>
-      // ログ送信ヘルパー
-      function reportLog(msg) {
-        try {
-          var img = new Image();
-          img.src = '/api/client-log?msg=' + encodeURIComponent(msg) + '&t=' + Date.now();
-        } catch (e) {}
-      }
+      (function() {
+        // ゾンビServiceWorkerの自動駆除とワンタイムリロード
+        var hasController = 'serviceWorker' in navigator && !!navigator.serviceWorker.controller;
+        var cleanedKey = 'sw_purged_v1';
 
-      reportLog('index.html script running in ' + (window.location.href));
-
-      // 古いServiceWorkerや壊れたCacheStorageを自動で完全クリーンアップ
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-          if (registrations.length > 0) {
-            reportLog('Found ' + registrations.length + ' SW registrations, unregistering...');
-            for (var i = 0; i < registrations.length; i++) {
-              registrations[i].unregister();
-            }
+        function cleanupSW() {
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              for (var i = 0; i < regs.length; i++) {
+                regs[i].unregister();
+              }
+            }).catch(function() {});
           }
-        }).catch(function(err) {
-          reportLog('SW getRegistrations error: ' + err);
-        });
-      }
-      if ('caches' in window) {
-        caches.keys().then(function(names) {
-          if (names.length > 0) {
-            reportLog('Found ' + names.length + ' cache storages, deleting...');
-            for (var i = 0; i < names.length; i++) {
-              caches.delete(names[i]);
-            }
+          if ('caches' in window) {
+            caches.keys().then(function(keys) {
+              for (var j = 0; j < keys.length; j++) {
+                caches.delete(keys[j]);
+              }
+            }).catch(function() {});
           }
-        }).catch(function() {});
-      }
-
-      // エラーを検知してサーバーログに自動記録
-      window.addEventListener('error', function(event) {
-        var target = event.target;
-        if (target && (target.tagName === 'SCRIPT' || target.tagName === 'LINK')) {
-          var url = target.src || target.href || '';
-          reportLog('Resource load error: <' + target.tagName + '> src=' + url);
-        } else {
-          var msg = event.message || (event.error && (event.error.message || event.error.stack)) || 'Unknown error';
-          reportLog('Global error: ' + msg + ' at ' + (event.filename || '') + ':' + (event.lineno || ''));
         }
-      }, true);
 
-      window.addEventListener('unhandledrejection', function(event) {
-        var reason = event.reason;
-        var msg = (reason && (reason.stack || reason.message)) ? (reason.message + ' ' + reason.stack) : String(reason);
-        reportLog('Unhandled rejection: ' + msg);
-      });
+        cleanupSW();
+
+        // もし古いServiceWorkerがこのページを掌握(controller)していた場合、
+        // unregisterしてもリロードするまでcontrollerが有効なままリクエストを破壊するため、
+        // 1度だけ即座にリロードしてcontrollerの支配を完全に解除する
+        if (hasController && !sessionStorage.getItem(cleanedKey)) {
+          sessionStorage.setItem(cleanedKey, 'true');
+          window.location.reload();
+          return;
+        }
+
+        // 3.5秒経過してもReactがマウントされない場合の自動自己回復
+        setTimeout(function() {
+          if (!window.__APP_MOUNTED__) {
+            console.warn('App mount delayed. Auto-recovering...');
+            cleanupSW();
+            if (!sessionStorage.getItem('app_auto_recovered')) {
+              sessionStorage.setItem('app_auto_recovered', 'true');
+              window.location.reload();
+            }
+          }
+        }, 3500);
+      })();
     </script>
   </head>
   <body class="bg-amber-50/40 text-stone-800 antialiased selection:bg-amber-200">
     <div id="root">
-      <!-- Reactマウント前に一瞬だけ表示される控えめなインジケーター（マウント時に自動置換） -->
       <div style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: system-ui, -apple-system, sans-serif; color: #78350f;">
-        <div style="font-size: 40px; margin-bottom: 12px; animation: pulse 1.5s infinite ease-in-out;">☕</div>
-        <div style="font-size: 14px; font-weight: 600; color: #92400e; letter-spacing: 0.05em;">コーヒーレシピノート</div>
+        <div style="font-size: 42px; margin-bottom: 12px;">☕</div>
+        <div style="font-size: 15px; font-weight: 600; color: #92400e; letter-spacing: 0.05em; margin-bottom: 6px;">コーヒーレシピノート</div>
+        <div style="font-size: 12px; color: #b45309; font-weight: 500;">起動中...</div>
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>

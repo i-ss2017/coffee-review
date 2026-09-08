@@ -26,6 +26,7 @@ if (rootElement) {
         </ErrorBoundary>
       </StrictMode>
     );
+    (window as unknown as { __APP_MOUNTED__?: boolean }).__APP_MOUNTED__ = true;
     report('main.tsx render invoked successfully');
   } catch (err) {
     report('main.tsx error: ' + (err instanceof Error ? err.stack || err.message : String(err)));
