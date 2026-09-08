@@ -18,61 +18,27 @@
     <link rel="manifest" href="/manifest.json" />
 
     <script>
-      (function() {
-        // ゾンビServiceWorkerの自動駆除とワンタイムリロード
-        var hasController = 'serviceWorker' in navigator && !!navigator.serviceWorker.controller;
-        var cleanedKey = 'sw_purged_v1';
-
-        function cleanupSW() {
-          if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(regs) {
-              for (var i = 0; i < regs.length; i++) {
-                regs[i].unregister();
-              }
-            }).catch(function() {});
-          }
-          if ('caches' in window) {
-            caches.keys().then(function(keys) {
-              for (var j = 0; j < keys.length; j++) {
-                caches.delete(keys[j]);
-              }
-            }).catch(function() {});
-          }
-        }
-
-        cleanupSW();
-
-        // もし古いServiceWorkerがこのページを掌握(controller)していた場合、
-        // unregisterしてもリロードするまでcontrollerが有効なままリクエストを破壊するため、
-        // 1度だけ即座にリロードしてcontrollerの支配を完全に解除する
-        if (hasController && !sessionStorage.getItem(cleanedKey)) {
-          sessionStorage.setItem(cleanedKey, 'true');
-          window.location.reload();
-          return;
-        }
-
-        // 3.5秒経過してもReactがマウントされない場合の自動自己回復
-        setTimeout(function() {
-          if (!window.__APP_MOUNTED__) {
-            console.warn('App mount delayed. Auto-recovering...');
-            cleanupSW();
-            if (!sessionStorage.getItem('app_auto_recovered')) {
-              sessionStorage.setItem('app_auto_recovered', 'true');
-              window.location.reload();
+      // 過去のServiceWorkerとキャッシュを非同期かつ安全に登録解除（リロードは絶対に呼ばない）
+      try {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(regs) {
+            for (var i = 0; i < regs.length; i++) {
+              regs[i].unregister();
             }
-          }
-        }, 3500);
-      })();
+          }).catch(function() {});
+        }
+        if ('caches' in window) {
+          caches.keys().then(function(keys) {
+            for (var j = 0; j < keys.length; j++) {
+              caches.delete(keys[j]);
+            }
+          }).catch(function() {});
+        }
+      } catch (e) {}
     </script>
   </head>
   <body class="bg-amber-50/40 text-stone-800 antialiased selection:bg-amber-200">
-    <div id="root">
-      <div style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: system-ui, -apple-system, sans-serif; color: #78350f;">
-        <div style="font-size: 42px; margin-bottom: 12px;">☕</div>
-        <div style="font-size: 15px; font-weight: 600; color: #92400e; letter-spacing: 0.05em; margin-bottom: 6px;">コーヒーレシピノート</div>
-        <div style="font-size: 12px; color: #b45309; font-weight: 500;">起動中...</div>
-      </div>
-    </div>
+    <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
