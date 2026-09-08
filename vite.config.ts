@@ -1,13 +1,37 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig} from 'vite';
+import fs from 'fs';
+import { defineConfig, Plugin } from 'vite';
+
+const debugLoggerPlugin = (): Plugin => ({
+  name: 'debug-logger',
+  configureServer(server) {
+    server.middlewares.use((req, res, next) => {
+      if (req.url && req.url.startsWith('/api/client-log')) {
+        const url = new URL(req.url, 'http://localhost:3000');
+        const msg = url.searchParams.get('msg') || '';
+        const logLine = `[${new Date().toISOString()}] ${msg}\n`;
+        try {
+          fs.appendFileSync('/tmp/client_debug.log', logLine);
+        } catch {}
+        console.log('[CLIENT DEBUG]', msg);
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'text/plain');
+        res.end('ok');
+        return;
+      }
+      next();
+    });
+  },
+});
 
 export default defineConfig(() => {
   return {
     plugins: [
       react(),
       tailwindcss(),
+      debugLoggerPlugin(),
     ],
     resolve: {
       alias: {
@@ -15,10 +39,7 @@ export default defineConfig(() => {
       },
     },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
-      // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },
   };

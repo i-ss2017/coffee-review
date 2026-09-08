@@ -18,18 +18,67 @@
     <link rel="manifest" href="/manifest.json" />
 
     <script>
-      // 残存ServiceWorkerの自動登録解除（バックグラウンドで静かに実行）
+      // ログ送信ヘルパー
+      function reportLog(msg) {
+        try {
+          var img = new Image();
+          img.src = '/api/client-log?msg=' + encodeURIComponent(msg) + '&t=' + Date.now();
+        } catch (e) {}
+      }
+
+      reportLog('index.html script running in ' + (window.location.href));
+
+      // 古いServiceWorkerや壊れたCacheStorageを自動で完全クリーンアップ
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(function(registrations) {
-          for (var i = 0; i < registrations.length; i++) {
-            registrations[i].unregister();
+          if (registrations.length > 0) {
+            reportLog('Found ' + registrations.length + ' SW registrations, unregistering...');
+            for (var i = 0; i < registrations.length; i++) {
+              registrations[i].unregister();
+            }
+          }
+        }).catch(function(err) {
+          reportLog('SW getRegistrations error: ' + err);
+        });
+      }
+      if ('caches' in window) {
+        caches.keys().then(function(names) {
+          if (names.length > 0) {
+            reportLog('Found ' + names.length + ' cache storages, deleting...');
+            for (var i = 0; i < names.length; i++) {
+              caches.delete(names[i]);
+            }
           }
         }).catch(function() {});
       }
+
+      // エラーを検知してサーバーログに自動記録
+      window.addEventListener('error', function(event) {
+        var target = event.target;
+        if (target && (target.tagName === 'SCRIPT' || target.tagName === 'LINK')) {
+          var url = target.src || target.href || '';
+          reportLog('Resource load error: <' + target.tagName + '> src=' + url);
+        } else {
+          var msg = event.message || (event.error && (event.error.message || event.error.stack)) || 'Unknown error';
+          reportLog('Global error: ' + msg + ' at ' + (event.filename || '') + ':' + (event.lineno || ''));
+        }
+      }, true);
+
+      window.addEventListener('unhandledrejection', function(event) {
+        var reason = event.reason;
+        var msg = (reason && (reason.stack || reason.message)) ? (reason.message + ' ' + reason.stack) : String(reason);
+        reportLog('Unhandled rejection: ' + msg);
+      });
     </script>
   </head>
   <body class="bg-amber-50/40 text-stone-800 antialiased selection:bg-amber-200">
-    <div id="root"></div>
+    <div id="root">
+      <!-- Reactマウント前に一瞬だけ表示される控えめなインジケーター（マウント時に自動置換） -->
+      <div style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: system-ui, -apple-system, sans-serif; color: #78350f;">
+        <div style="font-size: 40px; margin-bottom: 12px; animation: pulse 1.5s infinite ease-in-out;">☕</div>
+        <div style="font-size: 14px; font-weight: 600; color: #92400e; letter-spacing: 0.05em;">コーヒーレシピノート</div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
